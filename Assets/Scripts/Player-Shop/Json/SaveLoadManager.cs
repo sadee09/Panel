@@ -2,21 +2,31 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-public class SaveLoadManager : MonoBehaviour
+public abstract class SaveLoadManager 
 {
     [Serializable]
-    private class SaveItemData
+    public class SaveItemData
     {
         public string name;
         public bool purchased;
     }
 
     [Serializable]
-    private class SavedItemDataList
+    public class SavedItemDataList
     {
         public List<SaveItemData> items;
+        
     }
-    
+
+    private static class ItemListManager
+    {
+        public static void AddItem(SavedItemDataList itemList, SaveItemData item)
+        {
+            itemList.items.Add(item);
+        }
+    }
+
+   
     public static void SavePurchasedItem(Item itemData)
     {
         //A serializable item data object
@@ -36,8 +46,8 @@ public class SaveLoadManager : MonoBehaviour
             itemList = JsonUtility.FromJson<SavedItemDataList>(jsonData);
         }
         
-        itemList.items.Add(saveItemData);
-
+        ItemListManager.AddItem(itemList, saveItemData);
+ 
         // Serialize the updated data back to JSON
         string updatedJsonData = JsonUtility.ToJson(itemList);
 
@@ -59,7 +69,7 @@ public class SaveLoadManager : MonoBehaviour
         {
             // Iterating through the deserialized data and update the UI
             // As itemView is taken we don't need to provide the foreach loop as it checks the data while being instantiated.
-            SaveItemData saveItemData = itemList.items.Find(i => i.name == itemView.itemData.name);
+            SaveItemData saveItemData = itemList.items.Find(i => i.name == itemView.ItemName);
 
             if (saveItemData != null && saveItemData.purchased)
             {
