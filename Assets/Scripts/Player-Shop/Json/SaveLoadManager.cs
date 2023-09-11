@@ -16,8 +16,8 @@ public class SaveLoadManager : MonoBehaviour
     {
         public List<SaveItemData> items;
     }
-
-    public static void SavePurchasedItem(ShopManager.ItemData itemData)
+    
+    public static void SavePurchasedItem(Item itemData)
     {
         //A serializable item data object
         SaveItemData saveItemData = new SaveItemData
@@ -35,13 +35,7 @@ public class SaveLoadManager : MonoBehaviour
         {
             itemList = JsonUtility.FromJson<SavedItemDataList>(jsonData);
         }
-
-        // Adding the new item data to the list
-        if (itemList.items == null)
-        {
-            itemList.items = new List<SaveItemData>();
-        }
-
+        
         itemList.items.Add(saveItemData);
 
         // Serialize the updated data back to JSON
@@ -51,32 +45,29 @@ public class SaveLoadManager : MonoBehaviour
         PlayerPrefs.SetString("PurchasedItems", updatedJsonData);
         PlayerPrefs.Save();
     }
+    
 
-    public static void LoadPurchasedItems(List<ShopManager.ItemData> itemDatas)
+    public static void LoadPurchasedItems(ItemView itemView)
     {
         // Loading saved item data from PlayerPrefs
         string jsonData = PlayerPrefs.GetString("PurchasedItems", "");
-
+        
         // Deserialize the JSON data into a list of serializable item data
         SavedItemDataList itemList = JsonUtility.FromJson<SavedItemDataList>(jsonData);
 
         if (itemList != null && itemList.items != null)
         {
             // Iterating through the deserialized data and update the UI
-            foreach (var itemData in itemDatas)
-            {
-                SaveItemData saveItemData = itemList.items.Find(i => i.name == itemData.name);
+            // As itemView is taken we don't need to provide the foreach loop as it checks the data while being instantiated.
+            SaveItemData saveItemData = itemList.items.Find(i => i.name == itemView.itemData.name);
 
-                if (saveItemData != null && saveItemData.purchased)
-                {
-                    itemData.buy.gameObject.SetActive(false);
-                    itemData.bought.SetActive(true);
-                }
-                else
-                {
-                    itemData.buy.gameObject.SetActive(true);
-                    itemData.bought.SetActive(false);
-                }
+            if (saveItemData != null && saveItemData.purchased)
+            {
+                itemView.ChangeBuyButton();
+            }
+            else
+            {
+                itemView.ShowBuyButton();
             }
         }
     }

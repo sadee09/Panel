@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine.Events;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,8 +9,6 @@ using System.Linq;
 public class ShopManager : MonoBehaviour
 {
     public CoinManager coinManager;
-    public List<ItemData> itemDatas; // List of item data
-
     public GameObject panel;
     public RectTransform panelRect;
     public Vector2 targetPosition;
@@ -19,7 +16,10 @@ public class ShopManager : MonoBehaviour
     public UnityEvent onClose;
     public UnityEvent onOpen;
 
-    public event Action<ItemData> ItemPurchased; // Define a purchase event
+    public List<Item> itemDatas;
+    [SerializeField] public ItemView itemPrefab;
+    [SerializeField] public RectTransform spawnLocation; 
+    public event Action<Item> ItemPurchased; // Define a purchase event
 
     public void Awake()
     {
@@ -28,23 +28,34 @@ public class ShopManager : MonoBehaviour
 
     private void Start()
     {
-        SaveLoadManager.LoadPurchasedItems(itemDatas); // Load purchased items when the scene starts
+        InstantiateItemViews();
     }
 
-    public void PurchaseItem()
+    private void InstantiateItemViews()
     {
-        //Item is found through the buy button that is clicked during the purchase of the product
-        Button clickedButton = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.GetComponent<Button>();
-        ItemData itemData = itemDatas.Find(i => i.buy == clickedButton);
-        
-        //Item can also be find as name through
-        //ItemData itemData = itemDatas.Find(i => i.name == name); 
+        if (itemDatas != null)
+        {
+            foreach (Item itemData in itemDatas)
+            {
+                ItemView itemViewPrefab = Instantiate(itemPrefab, spawnLocation);
+                itemViewPrefab.SetData(itemData);
 
+                ShopOpener.AddItemsToAnimation(itemViewPrefab);
+                SaveLoadManager.LoadPurchasedItems(itemViewPrefab); // Load purchased items when the scene starts
+
+                Button buyButton = itemViewPrefab.buy;
+                Item capturedItemData = itemData;
+                buyButton.onClick.AddListener(() => PurchaseItem(capturedItemData, itemViewPrefab));
+            }
+        }
+    }
+    public void PurchaseItem(Item itemData,  ItemView itemPrefabView)
+    {
         if (itemData != null)
         {
             // Price is given as Rs.1000 which includes both numeric and string
             // Extract the numeric part from the item.price.text
-            string priceText = itemData.price.text;
+            string priceText = itemData.price;
             string numericPart = new string(priceText.Where(char.IsDigit).ToArray());
 
             int itemPrice;
@@ -55,8 +66,7 @@ public class ShopManager : MonoBehaviour
                 if (coinManager.coins >= itemPrice)
                 {
                     coinManager.SubtractCoins(itemPrice);
-                    itemData.buy.gameObject.SetActive(false);
-                    itemData.bought.SetActive(true);
+                    itemPrefabView.ChangeBuyButton();
                     Debug.Log("Purchased item with price: " + itemPrice);
 
                     ItemPurchased?.Invoke(itemData);
@@ -90,44 +100,43 @@ public class ShopManager : MonoBehaviour
             });
         }
     }
-
-    [Serializable]
-    public class ItemData
-    {
-        public TMP_Text price;
-        public Button buy;
-        public GameObject bought;
-        public string name; // Unique identifier for each item
-    }
-
-    //Only using PlayerPref
-    // private void SavePurchasedItem(ItemData itemData)
-    // {
-    //     // Save the purchased item's information using PlayerPrefs
-    //     PlayerPrefs.SetInt("Purchased_" + itemData.name, 1);
-    //     PlayerPrefs.Save();
-    // }
-    //
-    // private void LoadPurchasedItems()
-    // {
-    //     foreach (var itemData in itemDatas)
-    //     {
-    //         // Load the purchased status of the item
-    //         int purchased = PlayerPrefs.GetInt("Purchased_" + itemData.name, 0); // 0 indicates not purchased by default
-    //
-    //         // Set the button state based on the loaded status
-    //         if (purchased == 1)
-    //         {
-    //             itemData.buy.gameObject.SetActive(false);
-    //             itemData.bought.SetActive(true);
-    //         }
-    //         else
-    //         {
-    //             itemData.buy.gameObject.SetActive(true);
-    //             itemData.bought.SetActive(false);
-    //         }
-    //     }
-    // }
 }
+
+
+//Only using PlayerPref
+// private void SavePurchasedItem(ItemData itemData)
+// {
+//     // Save the purchased item's information using PlayerPrefs
+//     PlayerPrefs.SetInt("Purchased_" + itemData.name, 1);
+//     PlayerPrefs.Save();
+// }
+//
+// private void LoadPurchasedItems()
+// {
+//     foreach (var itemData in itemDatas)
+//     {
+//         // Load the purchased status of the item
+//         int purchased = PlayerPrefs.GetInt("Purchased_" + itemData.name, 0); // 0 indicates not purchased by default
+//
+//         // Set the button state based on the loaded status
+//         if (purchased == 1)
+//         {
+//             itemData.buy.gameObject.SetActive(false);
+//             itemData.bought.SetActive(true);
+//         }
+//         else
+//         {
+//             itemData.buy.gameObject.SetActive(true);
+//             itemData.bought.SetActive(false);
+//         }
+//     }
+// }
+
+//Item is found through the buy button that is clicked during the purchase of the product
+//  Button clickedButton = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.GetComponent<Button>();
+// ItemData itemData = itemDatas.Find(i => i.buy == clickedButton);
+        
+//Item can also be find as name through
+//ItemData itemData = itemDatas.Find(i => i.name == name); 
 
 

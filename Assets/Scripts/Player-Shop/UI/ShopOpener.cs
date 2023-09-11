@@ -13,7 +13,7 @@ public class ShopOpener : MonoBehaviour
     private Vector2 originalPosition;
     public RectTransform panelRect;
     
-    public List<GameObject> items = new List<GameObject>();
+    public static List<ItemView> items = new List<ItemView>();
     public float fadeTime;
 
     public void Awake()
@@ -21,6 +21,10 @@ public class ShopOpener : MonoBehaviour
         originalPosition = panelRect.anchoredPosition;
     }
 
+    public static void AddItemsToAnimation(ItemView itemToAdd)
+    {
+        items.Add(itemToAdd);
+    }
     public void OpenPanel()
     {
         if (panel != null)
